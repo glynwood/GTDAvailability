@@ -1,411 +1,110 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Observerships - Filterable Table</title>
-<style>
-  :root {
-    --mft-navy: #425563;
-    --mft-blue: #0072CD;
-    --mft-blue-dk: #005a9e;
-    --border: #000000;
-    --text: #111;
-    --bg: #ffffff;
-  }
-  body {
-    margin: 0;
-    padding: 12px;
-    font-family: Arial, sans-serif;
-    color: var(--text);
-    background: var(--bg);
-  }
-  .filters {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 8px 12px;
-    align-items: end;
-    margin-bottom: 8px;
-  }
-  .filters .field {
-    grid-column: span 12;
-  }
-  @media (min-width: 720px) {
-    .filters .field--specialty { grid-column: span 4; }
-    .filters .field--from { grid-column: span 2; }
-    .filters .field--to { grid-column: span 2; }
-    .filters .field--duration { grid-column: span 2; }
-    .filters .field--supervisor { grid-column: span 2; }
-    .filters .actions { grid-column: span 12; display: flex; gap: 8px; align-items: center; }
-  }
-  label {
-    display: block;
-    font-size: 12px;
-    color: #333;
-    margin-bottom: 4px;
-  }
-  select, input[type="text"], input[type="date"] {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid #999;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-  .btn {
-    background: var(--mft-blue);
-    color: #fff;
-    padding: 8px 14px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: bold;
-    display: inline-block;
-    border: 1px solid var(--mft-blue-dk);
-    cursor: pointer;
-    font-size: 14px;
-  }
-  .btn--secondary {
-    background: #f5f5f5;
-    color: #333;
-    border: 1px solid #bbb;
-    font-weight: normal;
-  }
-  .result-meta {
-    font-size: 13px;
-    color: #444;
-    margin: 6px 0 10px 0;
-  }
-  /* Table styles preserved from your HTML */
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 8px 0;
-  }
-  th {
-    color: #ffffff;
-    background-color: var(--mft-navy);
-    border: 1px solid var(--border);
-    padding: 6px 8px;
-    text-align: left;
-    font-size: 12pt;
-  }
-  td {
-    border: 1px solid var(--border);
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 11pt;
-    vertical-align: top;
-  }
-  a.cta {
-    background: var(--mft-blue);
-    color: #ffffff !important;
-    padding: 8px 14px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: bold;
-    display: inline-block;
-    border: 1px solid var(--mft-blue-dk);
-  }
-  /* Hidden state for filtered rows */
-  tr[data-hidden="true"] {
-    display: none;
-  }
-  .no-results {
-    padding: 12px;
-    border: 1px solid #ccc;
-    background: #fafafa;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:16px;}
+    .filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;}
+    .filters label{font-size:12px;color:#333;display:block;margin-bottom:4px;}
+    .filters select,.filters input[type=date]{padding:6px 8px;font-size:12pt;}
+    .btn{padding:6px 10px;border:1px solid #444;background:#f6f6f6;cursor:pointer;}
+    .btn:hover{background:#eee;}
+    .muted{color:#666;font-size:11pt;padding-left:8px;}
+    h1{margin:0 0 8px 0;font-size:18pt;}
+  </style>
 </head>
 <body>
-
-<!-- Filters -->
-<div class="filters" aria-label="Filters">
-  <div class="field field--specialty">
-    <label for="f-specialty">Specialty</label>
-    <select id="f-specialty">
-      <option value="">All specialties</option>
-      <!-- Options will be populated from the table -->
-    </select>
+  <h1></h1>
+  <div class="filters">
+    <div><label for="fltSpec">Specialty</label><select id="fltSpec"><option value="">All</option></select></div>
+    <div><label for="fltSup">Supervisor</label><select id="fltSup"><option value="">All</option></select></div>
+    <div><label for="fltFrom">Start on or after</label><input type="date" id="fltFrom"></div>
+    <div><label for="fltTo">Start on or before</label><input type="date" id="fltTo"></div>
+    <div><button class="btn" id="btnClear">Clear filters</button></div>
+    <div class="muted" id="count"></div>
   </div>
-
-  <div class="field field--from">
-    <label for="f-from">Starting on from</label>
-    <input type="date" id="f-from" placeholder="DD/MM/YYYY" />
-  </div>
-
-  <div class="field field--to">
-    <label for="f-to">Starting on to</label>
-    <input type="date" id="f-to" placeholder="DD/MM/YYYY" />
-  </div>
-
-  <div class="field field--duration">
-    <label for="f-duration">Duration</label>
-    <select id="f-duration">
-      <option value="">All durations</option>
-      <!-- Options will be populated from the table -->
-    </select>
-  </div>
-
-  <div class="field field--supervisor">
-    <label for="f-supervisor">Supervisor</label>
-    <input type="text" id="f-supervisor" placeholder="e.g. Maitra" />
-  </div>
-
-  <div class="actions">
-    <button type="button" class="btn btn--secondary" id="btn-reset">Reset</button>
-    <span class="result-meta" id="result-meta" role="status" aria-live="polite"></span>
-  </div>
-</div>
-
-<!-- Your original table, with minimal structural changes.
-     Script will decorate rows with data-* attributes for fast filtering. -->
-<div style="width:100%;">
-  <table id="obs-table" role="grid" aria-label="Observership opportunities">
-    <thead>
-      <tr>
-        <th>Specialty</th>
-        <th>Starting On</th>
-        <th>Duration</th>
-        <th>Supervisor</th>
-        <th>Request now</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Paediatric - Respiratory</td>
-        <td>02/03/2026</td>
-        <td>4 weeks</td>
-        <td>Maitra, Anirban</td>
-        <td><a class="cta" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Respiratory%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-02%22" target="_blank">Request now</a></td>
-      </tr>
-      <tr>
-        <td>Paediatric - Respiratory</td>
-        <td>09/03/2026</td>
-        <td>4 weeks</td>
-        <td>Maitra, Anirban</td>
-        <td><a class="cta" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Respiratory%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-09%22" target="_blank">Request now</a></td>
-      </tr>
-      <tr>
-        <td>Paediatric - Respiratory</td>
-        <td>16/03/2026</td>
-        <td>4 weeks</td>
-        <td>Maitra, Anirban</td>
-        <td><a class="cta" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Respiratory%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-16%22" target="_blank">Request now</a></td>
-      </tr>
-    </tbody>
-  </table>
-  <div id="no-results" class="no-results" hidden>No results match your filters.</div>
-</div>
-
+<!-- HTML generated by GetTableFromSQL --><div style="width:100%;font-family:Arial,sans-serif;"><table id="dataTable" role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;margin:8px 0;"><tr ><th style="color:#ffffff;background-color:#425563;border:1px solid #000;padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:12pt;">Specialty</th><th style="color:#ffffff;background-color:#425563;border:1px solid #000;padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:12pt;">Supervisor</th><th style="color:#ffffff;background-color:#425563;border:1px solid #000;padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:12pt;">Starting On</th><th style="color:#ffffff;background-color:#425563;border:1px solid #000;padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:12pt;">Duration</th><th style="color:#ffffff;background-color:#425563;border:1px solid #000;padding:6px 8px;text-align:left;font-family:Arial,sans-serif;font-size:12pt;">Request now</th></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Ear, nose and throat</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Superviser Group, Paediatric ENT</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 09 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Ear,%20nose%20and%20throat%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-09%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Ear, nose and throat</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Superviser Group, Paediatric ENT</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 16 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Ear,%20nose%20and%20throat%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-16%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Ear, nose and throat</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Superviser Group, Paediatric ENT</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 23 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Ear,%20nose%20and%20throat%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-23%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Ear, nose and throat</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Superviser Group, Paediatric ENT</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 30 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Ear,%20nose%20and%20throat%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-30%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Respiratory</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Maitra, Anirban</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 09 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Respiratory%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-09%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Respiratory</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Maitra, Anirban</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 16 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Respiratory%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-16%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Respiratory</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Maitra, Anirban</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 23 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Respiratory%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-23%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Respiratory</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Maitra, Anirban</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 30 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Respiratory%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-30%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Rheumatology</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Rasul Sominya, Sajida</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 09 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Rheumatology%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-09%22" target="_blank">Request now</a></td></tr><tr ><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Paediatric - Rheumatology</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Rasul Sominya, Sajida</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">Mon 16 Mar 2026</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;vertical-align:top;">4 weeks</td><td style="border:1px solid #000;padding:10px 12px;text-align:left;font-family:Arial,sans-serif;font-size:11pt;"><a style="background:#425563;color:#ffffff !important;padding:8px 14px;border-radius:4px;text-decoration:none;font-weight:bold;display:inline-block;border:1px solid #425563;" href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=eHDH3QPo606Ayt0DunRZxPsdAfIR-2dNjM2tHPl6CzVUQUNOS1haOUZCTjlLRTk0M0c0M1c4N1ZXTy4u&amp;rafb8a7357de148d3aaf212a132266b86=%22Observership%22&amp;rffa2a57a5907445aa6970b6d78ed3fd4=%22Royal%20Manchester%20Children%27s%20Hospital%20-%20Paediatric%22&amp;re9cf1876d74b49b3b801d62de85f33e6=%22Paediatric%20-%20Rheumatology%22&amp;r2183e1c9921f48de85fc1631885d1987=%222026-03-16%22" target="_blank">Request now</a></td></tr></table></div>
 <script>
-  // Utility: parse UK date strings dd/mm/yyyy and ISO yyyy-mm-dd
-  function parseDateFlexible(str) {
-    if (!str) return null;
-    // Normalize whitespace
-    str = String(str).trim();
-    // Try ISO first
-    // Allow formats: YYYY-MM-DD or YYYY/MM/DD
-    let m = str.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})$/);
-    if (m) {
-      const d = new Date(Date.UTC(+m[1], +m[2]-1, +m[3]));
-      return isNaN(d) ? null : d;
+(function(){
+  function byId(id){return document.getElementById(id);}
+  var tbl = document.getElementById('dataTable');
+  if(!tbl){return;}
+  var hasThead = !!tbl.tHead;
+  var body = tbl.tBodies.length ? tbl.tBodies[0] : tbl;
+  var allRows = Array.prototype.slice.call(body.rows);
+  var rows = hasThead ? allRows : allRows.slice(1);
+  function colIndexByName(nameLower){
+    var hdrCells = tbl.tHead ? tbl.tHead.rows[0].cells : (tbl.rows.length ? tbl.rows[0].cells : []);
+    for(var i=0;i<hdrCells.length;i++){
+      var t = String(hdrCells[i].textContent||'').trim().toLowerCase();
+      if(t===nameLower){return i;}
     }
-    // Try UK dd/mm/yyyy
-    m = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (m) {
-      const d = new Date(Date.UTC(+m[3], +m[2]-1, +m[1]));
-      return isNaN(d) ? null : d;
-    }
-    return null;
+    return -1;
   }
-
-  function formatToISODateOnly(d) {
-    // Returns yyyy-mm-dd
-    if (!(d instanceof Date) || isNaN(d)) return "";
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth()+1).padStart(2, "0");
-    const day = String(d.getUTCDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+  var idxSpec = colIndexByName('specialty');
+  var idxSup  = colIndexByName('supervisor');
+  var idxDate = colIndexByName('starting on');
+  if(idxSpec<0 || idxSup<0 || idxDate<0){ idxSpec=0; idxSup=1; idxDate=2; }
+  function uniqueSorted(values){
+    var s = Array.from(new Set(values));
+    s.sort(function(a,b){ return a.localeCompare(b, undefined, {sensitivity:'base'}); });
+    return s;
   }
-
-  function debounce(fn, delay) {
-    let t;
-    return function(...args) {
-      clearTimeout(t);
-      t = setTimeout(() => fn.apply(this, args), delay);
-    }
+  var specSel = byId('fltSpec');
+  var supSel  = byId('fltSup');
+  uniqueSorted(rows.map(function(r){return String(r.cells[idxSpec].textContent||'').trim();}))
+    .forEach(function(v){ var o=document.createElement('option'); o.value=v; o.textContent=v; specSel.appendChild(o); });
+  uniqueSorted(rows.map(function(r){return String(r.cells[idxSup].textContent||'').trim();}))
+    .forEach(function(v){ var o=document.createElement('option'); o.value=v; o.textContent=v; supSel.appendChild(o); });
+  function parseStartOnCell(s){
+    s = String(s||'').trim();
+    if(!s) return null;
+    s = s.replace(/^[A-Za-z]{3}\s+/, '');
+    var parts = s.split(/\s+/);
+    if(parts.length < 3) return null;
+    var day = parseInt(parts[0],10);
+    var monMap = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+    var m = monMap[(parts[1]||'').slice(0,3).toLowerCase()];
+    var year = parseInt(parts[2],10);
+    if(isNaN(day) || m==null || isNaN(year)) return null;
+    return new Date(Date.UTC(year, m, day, 12, 0, 0));
   }
-
-  // Capture elements
-  const tbl = document.getElementById("obs-table");
-  const tbody = tbl.querySelector("tbody");
-  const rows = Array.from(tbody.querySelectorAll("tr"));
-  const fSpecialty = document.getElementById("f-specialty");
-  const fFrom = document.getElementById("f-from");
-  const fTo = document.getElementById("f-to");
-  const fDuration = document.getElementById("f-duration");
-  const fSupervisor = document.getElementById("f-supervisor");
-  const btnReset = document.getElementById("btn-reset");
-  const meta = document.getElementById("result-meta");
-  const noResults = document.getElementById("no-results");
-
-  // Build data attributes for each row for quick filtering
-  rows.forEach(tr => {
-    const tds = tr.querySelectorAll("td");
-    const specialty = tds[0]?.textContent.trim() || "";
-    const startStr = tds[1]?.textContent.trim() || "";
-    const duration = tds[2]?.textContent.trim() || "";
-    const supervisor = tds[3]?.textContent.trim() || "";
-
-    const startDate = parseDateFlexible(startStr); // UTC
-    tr.dataset.specialty = specialty.toLowerCase();
-    tr.dataset.duration = duration.toLowerCase();
-    tr.dataset.supervisor = supervisor.toLowerCase();
-    tr.dataset.startIso = startDate ? formatToISODateOnly(startDate) : "";
-  });
-
-  // Populate filter dropdowns based on unique values
-  function populateUnique(select, values) {
-    const unique = Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
-    unique.forEach(v => {
-      if (!v) return;
-      const opt = document.createElement("option");
-      opt.value = v;
-      opt.textContent = v;
-      select.appendChild(opt);
+  function applyFilters(){
+    var spec = String(specSel.value||'').toLowerCase();
+    var sup  = String(supSel.value||'').toLowerCase();
+    var fromVal = byId('fltFrom').value;
+    var toVal   = byId('fltTo').value;
+    var fromD = fromVal ? new Date(fromVal+'T00:00:00Z') : null;
+    var toD   = toVal   ? new Date(toVal  +'T23:59:59Z') : null;
+    var visible = 0;
+    rows.forEach(function(r){
+      var specVal = String(r.cells[idxSpec].textContent||'').trim().toLowerCase();
+      var supVal  = String(r.cells[idxSup].textContent||'').trim().toLowerCase();
+      var d = parseStartOnCell(String(r.cells[idxDate].textContent||''));
+      var show = true;
+      if(spec && specVal !== spec) show = false;
+      if(sup  && supVal  !== sup)  show = false;
+      if(show && fromD && d && d < fromD) show = false;
+      if(show && toD   && d && d > toD)   show = false;
+      r.style.display = show ? '' : 'none';
+      if(show) visible++;
     });
+    var c = byId('count');
+    if(c) c.textContent = visible + ' result' + (visible===1?'':'s');
   }
-
-  populateUnique(
-    fSpecialty,
-    rows.map(r => r.dataset.specialty).filter(Boolean).map(v => toTitleFromData(v))
-  );
-  populateUnique(
-    fDuration,
-    rows.map(r => r.dataset.duration).filter(Boolean).map(v => toTitleFromData(v))
-  );
-
-  // Convert stored lowercased values back to display case
-  function toTitleFromData(v) {
-    // Keep punctuation and case after hyphen; simple title case for words
-    return v.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.slice(1));
-  }
-
-  // Apply filters
-  function applyFilters() {
-    const selSpecialty = fSpecialty.value.trim().toLowerCase();
-    const selDuration = fDuration.value.trim().toLowerCase();
-    const selSupervisor = fSupervisor.value.trim().toLowerCase();
-
-    // Parse dates from the inputs (they produce yyyy-mm-dd)
-    const fromDate = parseDateFlexible(fFrom.value);
-    const toDate = parseDateFlexible(fTo.value);
-
-    let visibleCount = 0;
-
-    rows.forEach(tr => {
-      let show = true;
-
-      // Specialty
-      if (selSpecialty && tr.dataset.specialty !== selSpecialty) {
-        show = false;
-      }
-
-      // Duration
-      if (show && selDuration && tr.dataset.duration !== selDuration) {
-        show = false;
-      }
-
-      // Supervisor contains
-      if (show && selSupervisor) {
-        if (!tr.dataset.supervisor.includes(selSupervisor)) show = false;
-      }
-
-      // Date range
-      if (show) {
-        const rowISO = tr.dataset.startIso; // yyyy-mm-dd
-        if (rowISO) {
-          const rowDate = parseDateFlexible(rowISO);
-          if (fromDate && rowDate < fromDate) show = false;
-          if (toDate && rowDate > toDate) show = false;
-        } else {
-          // If row has no date and user set a range, hide it
-          if (fromDate || toDate) show = false;
-        }
-      }
-
-      tr.dataset.hidden = show ? "false" : "true";
-      if (show) visibleCount++;
-    });
-
-    // Update result meta and empty message
-    meta.textContent = `${visibleCount} result${visibleCount === 1 ? "" : "s"}`;
-    noResults.hidden = visibleCount !== 0;
-  }
-
-  const debouncedApply = debounce(applyFilters, 80);
-
-  // Wire events
-  fSpecialty.addEventListener("change", applyFilters);
-  fDuration.addEventListener("change", applyFilters);
-  fSupervisor.addEventListener("input", debouncedApply);
-  fFrom.addEventListener("change", applyFilters);
-  fTo.addEventListener("change", applyFilters);
-
-  btnReset.addEventListener("click", () => {
-    fSpecialty.value = "";
-    fDuration.value = "";
-    fSupervisor.value = "";
-    fFrom.value = "";
-    fTo.value = "";
-    applyFilters();
-    // Also clear query params for a clean state (not strictly required)
-    if (window.history && window.history.replaceState) {
-      const url = location.protocol + "//" + location.host + location.pathname;
-      history.replaceState({}, document.title, url);
-    }
-  });
-
-  // Read query params to pre-seed filters
-  function seedFromQuery() {
-    const params = new URLSearchParams(window.location.search);
-
-    const specialty = params.get("specialty");
-    const duration = params.get("duration");
-    const supervisor = params.get("supervisor");
-    const from = params.get("from"); // yyyy-mm-dd or dd/mm/yyyy accepted
-    const to = params.get("to");
-
-    // Set selects to matching option text (case-insensitive)
-    function setSelectByText(select, text) {
-      if (!text) return;
-      const target = text.trim().toLowerCase();
-      for (const opt of select.options) {
-        if (opt.textContent.trim().toLowerCase() === target) {
-          select.value = opt.value;
-          return;
-        }
-      }
-    }
-
-    setSelectByText(fSpecialty, specialty);
-    setSelectByText(fDuration, duration);
-
-    if (supervisor) fSupervisor.value = supervisor;
-
-    // Date inputs expect yyyy-mm-dd
-    const fromDate = parseDateFlexible(from);
-    const toDate = parseDateFlexible(to);
-    if (fromDate) fFrom.value = formatToISODateOnly(fromDate);
-    if (toDate) fTo.value = formatToISODateOnly(toDate);
-  }
-
-  // Initialize
-  seedFromQuery();
+  specSel.addEventListener('change', applyFilters);
+  supSel.addEventListener('change', applyFilters);
+  byId('fltFrom').addEventListener('change', applyFilters);
+  byId('fltTo').addEventListener('change', applyFilters);
+  var btn = byId('btnClear');
+  if(btn){ btn.addEventListener('click', function(){
+    specSel.value=''; supSel.value=''; byId('fltFrom').value=''; byId('fltTo').value=''; applyFilters();
+  }); }
   applyFilters();
+})();
 </script>
 </body>
 </html>
+
